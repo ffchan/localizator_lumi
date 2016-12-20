@@ -6,21 +6,36 @@ def translate(file, path):
     csv_reader = csv.reader(csv_file, delimiter=',')
 
     locales = [
+        {'identifier' : 'en', 'column' : 2},
         {'identifier' : 'fr', 'column' : 3},
-        {'identifier' : 'en', 'column' : 5}
+        {'identifier' : 'es', 'column' : 4},
+        {'identifier' : 'de', 'column' : 5},
+        {'identifier' : 'ja', 'column' : 6},
+        {'identifier' : 'sv', 'column' : 7},
+        {'identifier' : 'it', 'column' : 8},
+        {'identifier' : 'sc', 'column' : 9},
+        {'identifier' : 'nl', 'column' : 10},
+        {'identifier' : 'fi', 'column' : 11},
+        {'identifier' : 'no', 'column' : 12},
+        {'identifier' : 'da', 'column' : 13}
                 ]
 
 
     for aLocale in locales:
-        if not os.path.exists(path+aLocale['identifier']+'.lproj'):
-            os.makedirs(path+aLocale['identifier']+'.lproj')
+        if not os.path.exists(path+'localization'):
+            os.makedirs(path+'localization')
 
-        file = open(path+aLocale['identifier']+'.lproj/Localizable.strings','w')
+#         file = open(path+aLocale['identifier']+'.lproj/Localizable.strings','w')
+        file = open(path+'localization/string_'+aLocale['identifier']+".txt",'w')
         for row in csv_reader:
             #Sample Code - You should override it
-                key = row[1]
+                key = row[0]
                 value = row[aLocale['column']]
-                file.write("\""+key+"\"=\""+escape(value)+"\";\n")
+                if (len(key) > 0):
+                	file.write("\""+key+"\" = \""+escape(value)+"\";\n")
+                else:
+                	file.write("\n")
+        csv_file.seek(0)
         file.close()
 
 
@@ -48,7 +63,7 @@ def escape_android(str):
     You can add your own rules
     """
     tmp = str.replace("\"", "\\\"")\
-                .replace("\\\\n", "\\n")\
+                .replace("\n", "\\n")\
                 .replace("'", "\\'")\
                 .replace("%@", "%s")\
                 .replace("&", "&amp;")
@@ -71,8 +86,16 @@ def translate_android(file, path):
     locales = {
                 'en': {'file': 'values/', 'column': 2},
                 'fr': {'file': 'values-fr/', 'column': 3},
-                'ja': {'file': 'values-ja/', 'column': 5},
-                'zh': {'file': 'values-zh/', 'column': 4}
+                'es': {'file': 'values-es/', 'column': 4},
+                'de': {'file': 'values-de/', 'column': 5},
+                'ja': {'file': 'values-ja/', 'column': 6},
+                'sv': {'file': 'values-sv/', 'column': 7},
+                'it': {'file': 'values-it/', 'column': 8},
+                'sc': {'file': 'values-zh/', 'column': 9},
+                'nl': {'file': 'values-nl/', 'column': 10},
+                'fi': {'file': 'values-fi/', 'column': 11},
+                'no': {'file': 'values-nb/', 'column': 12},
+                'da': {'file': 'values-da/', 'column': 13}
                 }
 
     #iterate over all locales to generate the translation file
@@ -88,23 +111,33 @@ def translate_android(file, path):
         file_pointer = open(_path+'strings.xml', 'w')
         #Add default text to xml file
         file_pointer.write('<?xml version="1.0" encoding="utf-8"?>\n')
-        file_pointer.write('<resources>\n')
+        file_pointer.write('<resources xmlns:tools="http://schemas.android.com/tools">\n')
 
         i = 0
         for row in csv_reader:
             #You have to implement your own parser rules here.
-            key = row[1]
+            key = row[0]
+            remark = row[1]
+
+           
             value = row[locales[aLocal]['column']]
             value = escape_android(value)
 
             #Check if the key is valid for android usage. See is_valid_android_key documentation for more infos
-            if not is_valid_android_key(key):
-                print("Invalid android key provided :"+key)
-            else:
-                file_pointer.write("    <string name=\"" + key + "\">" + value +
-                                   "</string>\n")
-        file_pointer.write('</resources>\n')
+            if remark == 'ignore':
+                if aLocal == 'en':
+                    file_pointer.write("<string name=\"" + key + "\" tools:ignore=\"MissingTranslation\">" + value + "</string>\n")
+                    print (key + " " + remark + " " + aLocal)
+               
 
+            else:
+                if not is_valid_android_key(key):
+                    file_pointer.write('\n')
+                else:
+                    file_pointer.write("<string name=\"" + key + "\">" + value +
+                                    "</string>\n")
+        file_pointer.write('</resources>\n')
+        csv_file.seek(0)
         file_pointer.close()
 
 
